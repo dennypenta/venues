@@ -6,3 +6,6 @@
 
 # dependency
 vendor/
+
+# settings
+.env

@@ -1,11 +1,21 @@
 package main
 
 import (
-	"./cmd/assembly"
+	"medesk/cmd/assembly"
+	"medesk/cmd/settings"
+
+	"github.com/joho/godotenv"
+
+	"log"
 )
 
 func main() {
-	app := assembly.NewApp()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
-	app.Run("8000")
+	app := assembly.NewApp()
+	port := settings.MustGetSetting("PORT")
+	app.Run(port)
 }
