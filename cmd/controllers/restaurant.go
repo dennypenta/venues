@@ -18,7 +18,11 @@ type RestaurantController struct {
 // I'm not checking for empty list cause We actually don't wanna see 204,
 // Easier will get empty list and 200
 func (controller *RestaurantController) List(context echo.Context) error {
-	restaurants, err := controller.Repo.List()
+	query := &models.Restaurant{}
+	if err := context.Bind(query); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+	restaurants, err := controller.Repo.List(query)
 	if err != nil {
 		return context.NoContent(http.StatusServiceUnavailable)
 	}

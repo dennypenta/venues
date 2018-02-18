@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type MockQuerier struct {
@@ -30,10 +29,6 @@ func (m *MockQuerier) All(model interface{}) error {
 func (m *MockQuerier) One(model interface{}) error {
 	args := m.Called(model)
 	return args.Error(0)
-}
-
-func (m *MockQuerier) matchedBy(value interface{}) bool {
-	return true
 }
 
 type MockDataAccess struct {
@@ -88,16 +83,33 @@ func (suite *RestaurantRepoTestSuite) TestSuccessList() {
 		}
 	}
 
-	result, err := suite.repo.List()
+	result, err := suite.repo.List(&models.Restaurant{})
 
 	suite.Assertions.Nil(err)
 	suite.Assertions.Equal(result, expected)
 }
 
+func (suite *RestaurantRepoTestSuite) TestFilterList() {
+	expected := fixtures.SimpleRestaurantSet()
+	for _, i := range expected {
+		if err := suite.storage.Insert(i); err != nil {
+			suite.T().Fatal(err.Error())
+		}
+	}
+
+	filter := &models.Restaurant{City: "City1"}
+	result, err := suite.repo.List(filter)
+
+	suite.Assertions.Nil(err)
+	for _, i := range result {
+		suite.Assertions.Equal(i.City, "City1")
+	}
+}
+
 func (suite *RestaurantRepoTestSuite) TestEmptyList() {
 	var expected []models.Restaurant
 
-	result, err := suite.repo.List()
+	result, err := suite.repo.List(&models.Restaurant{})
 
 	suite.Assertions.Nil(err)
 	suite.Assertions.Equal(result, expected)
@@ -108,10 +120,16 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 	mockedQuerier := &MockQuerier{}
 	suite.repo = &RestaurantRepo{storage: mockedStorage}
 
-	mockedStorage.On("Find", bson.M{}).Return(mockedQuerier)
-	mockedQuerier.On("All", mock.MatchedBy(mockedQuerier.matchedBy)).Return(errors.New("Mocked error"))
+	mockedStorage.On(
+		"Find",
+		mock.MatchedBy(func(i interface{}) bool {return true}),
+	).Return(mockedQuerier)
+	mockedQuerier.On(
+		"All",
+		mock.MatchedBy(func(i interface{}) bool {return true}),
+	).Return(errors.New("Mocked error"))
 
-	_, err := suite.repo.List()
+	_, err := suite.repo.List(&models.Restaurant{})
 
 	mockedStorage.AssertExpectations(suite.T())
 	mockedQuerier.AssertExpectations(suite.T())
@@ -119,7 +137,7 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestCreateSuccess() {
-	data, _ := suite.repo.List()
+	data, _ := suite.repo.List(&models.Restaurant{})
 	suite.Assertions.Zero(data)
 
 	expected := &models.Restaurant{Name: "Name"}
@@ -174,7 +192,7 @@ func (suite *RestaurantRepoTestSuite) TestUpdateError() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestRemoveSuccess() {
-	data, _ := suite.repo.List()
+	data, _ := suite.repo.List(&models.Restaurant{})
 	suite.Assertions.Zero(data)
 
 	object := &models.Restaurant{Name: "Name"}
@@ -184,7 +202,7 @@ func (suite *RestaurantRepoTestSuite) TestRemoveSuccess() {
 	err = suite.repo.Remove(object)
 	suite.Assertions.Nil(err)
 
-	data, _ = suite.repo.List()
+	data, _ = suite.repo.List(&models.Restaurant{})
 	suite.Assertions.Zero(data)
 }
 
