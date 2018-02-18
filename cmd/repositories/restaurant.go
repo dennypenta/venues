@@ -5,8 +5,6 @@ import (
 	"venues/pkg/mongo"
 
 	"venues/cmd/storages"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -15,7 +13,7 @@ var (
 
 type RestaurantAccessor interface {
 	Create(*models.Restaurant) error
-	List() ([]models.Restaurant, error)
+	List(*models.Restaurant) ([]models.Restaurant, error)
 	Update(*models.Restaurant, *models.Restaurant) error
 	Remove(*models.Restaurant) error
 }
@@ -24,9 +22,9 @@ type RestaurantRepo struct {
 	storage mongo.DataAccessor
 }
 
-func (repo *RestaurantRepo) List() ([]models.Restaurant, error) {
+func (repo *RestaurantRepo) List(filter *models.Restaurant) ([]models.Restaurant, error) {
 	var restaurants []models.Restaurant
-	err := repo.storage.Find(bson.M{}).All(&restaurants)
+	err := repo.storage.Find(filter).All(&restaurants)
 	return restaurants, err
 }
 

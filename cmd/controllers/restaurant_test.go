@@ -33,8 +33,8 @@ type MockRepo struct {
 	mock.Mock
 }
 
-func (m *MockRepo) List() ([]models.Restaurant, error) {
-	args := m.Called()
+func (m *MockRepo) List(filter *models.Restaurant) ([]models.Restaurant, error) {
+	args := m.Called(filter)
 	return args.Get(0).([]models.Restaurant), args.Error(1)
 }
 
@@ -75,28 +75,70 @@ func (suite *RestaurantControllerTestSuite) TestListSuccess() {
 	} {
 		mockRepo := &MockRepo{}
 		suite.controller = &RestaurantController{Repo: mockRepo}
-		mockRepo.On("List").Return(returnValue, nil)
+		mockRepo.On(
+			"List",
+			mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
+		).Return(returnValue, nil)
+		mockBinder := &MockBinder{}
+		mockBinder.On(
+			"Bind",
+			mock.MatchedBy(func(i interface{}) bool { return true }),
+			suite.echoContext,
+		).Return(nil)
+
+		suite.echoContext.Echo().Binder = mockBinder
 
 		suite.controller.List(suite.echoContext)
 
 		var resultValue []models.Restaurant
 		json.NewDecoder(suite.recorder.Body).Decode(&resultValue)
 
+		mockRepo.AssertExpectations(suite.T())
+		mockBinder.AssertExpectations(suite.T())
 		suite.Assertions.Equal(resultValue, returnValue)
 		suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
 	}
 }
 
-func (suite *RestaurantControllerTestSuite) TestListFail() {
+func (suite *RestaurantControllerTestSuite) TestListFailService() {
 	var returnValue []models.Restaurant
 
 	mockRepo := &MockRepo{}
 	suite.controller = &RestaurantController{Repo: mockRepo}
-	mockRepo.On("List").Return(returnValue, errors.New("mocked error"))
+	mockRepo.On(
+		"List",
+		mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
+	).Return(returnValue, errors.New("mocked error"))
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+
+	suite.echoContext.Echo().Binder = mockBinder
 
 	suite.controller.List(suite.echoContext)
 
+	mockRepo.AssertExpectations(suite.T())
+	mockBinder.AssertExpectations(suite.T())
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestListFailBind() {
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(errors.New("bind error"))
+
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.List(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusBadRequest)
 }
 
 func (suite *RestaurantControllerTestSuite) TestCreateSuccess() {
