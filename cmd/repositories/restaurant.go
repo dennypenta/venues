@@ -13,7 +13,7 @@ var (
 
 type RestaurantAccessor interface {
 	Create(*models.Restaurant) error
-	List(*models.Restaurant) ([]models.Restaurant, error)
+	List(*models.Restaurant, string) ([]models.Restaurant, error)
 	Update(*models.Restaurant, *models.Restaurant) error
 	Remove(*models.Restaurant) error
 }
@@ -22,9 +22,15 @@ type RestaurantRepo struct {
 	storage mongo.DataAccessor
 }
 
-func (repo *RestaurantRepo) List(filter *models.Restaurant) ([]models.Restaurant, error) {
+func (repo *RestaurantRepo) List(filter *models.Restaurant, ordering string) ([]models.Restaurant, error) {
 	var restaurants []models.Restaurant
-	err := repo.storage.Find(filter).All(&restaurants)
+
+	query := repo.storage.Find(filter)
+	if ordering != "" {
+		query = query.Sort(ordering)
+	}
+	err := query.All(&restaurants)
+
 	return restaurants, err
 }
 

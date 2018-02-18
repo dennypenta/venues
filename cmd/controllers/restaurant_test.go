@@ -33,8 +33,8 @@ type MockRepo struct {
 	mock.Mock
 }
 
-func (m *MockRepo) List(filter *models.Restaurant) ([]models.Restaurant, error) {
-	args := m.Called(filter)
+func (m *MockRepo) List(filter *models.Restaurant, ordering string) ([]models.Restaurant, error) {
+	args := m.Called(filter, ordering)
 	return args.Get(0).([]models.Restaurant), args.Error(1)
 }
 
@@ -78,6 +78,7 @@ func (suite *RestaurantControllerTestSuite) TestListSuccess() {
 		mockRepo.On(
 			"List",
 			mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
+			"",
 		).Return(returnValue, nil)
 		mockBinder := &MockBinder{}
 		mockBinder.On(
@@ -108,6 +109,7 @@ func (suite *RestaurantControllerTestSuite) TestListFailService() {
 	mockRepo.On(
 		"List",
 		mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
+		"",
 	).Return(returnValue, errors.New("mocked error"))
 	mockBinder := &MockBinder{}
 	mockBinder.On(
