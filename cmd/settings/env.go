@@ -1,10 +1,18 @@
 package settings
 
 import (
-	"os"
-	"github.com/labstack/gommon/log"
 	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/labstack/gommon/log"
 )
+
+func Load() {
+	if err := godotenv.Load(os.ExpandEnv("$GOPATH/src/venues/.env")); err != nil {
+		log.Warn("Error loading .env file")
+	}
+}
 
 func MustGetSetting(key string) string {
 	value := os.Getenv(key)
