@@ -12,10 +12,11 @@ import (
 
 	"encoding/json"
 
+	"strings"
+
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"strings"
 )
 
 type MockBinder struct {
@@ -26,7 +27,6 @@ func (m *MockBinder) Bind(i interface{}, c echo.Context) error {
 	args := m.Called(i, c)
 	return args.Error(0)
 }
-
 
 type MockRepo struct {
 	mock.Mock
@@ -97,12 +97,12 @@ func (suite *RestaurantControllerTestSuite) TestCreateSuccess() {
 	mockBinder := &MockBinder{}
 	suite.controller = &RestaurantController{Repo: mockRepo}
 	mockRepo.On(
-	"Create",
-		mock.MatchedBy(func(obj *models.Restaurant) bool {return true}),
+		"Create",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
 	).Return(nil)
 	mockBinder.On(
-	"Bind",
-		mock.MatchedBy(func(i interface{}) bool {return true}),
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
 		suite.echoContext,
 	).Return(nil)
 
@@ -125,11 +125,11 @@ func (suite *RestaurantControllerTestSuite) TestCreateFailByRepo() {
 	suite.controller = &RestaurantController{Repo: mockRepo}
 	mockRepo.On(
 		"Create",
-		mock.MatchedBy(func(obj *models.Restaurant) bool {return true}),
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
 	).Return(errors.New("create error"))
 	mockBinder.On(
 		"Bind",
-		mock.MatchedBy(func(i interface{}) bool {return true}),
+		mock.MatchedBy(func(i interface{}) bool { return true }),
 		suite.echoContext,
 	).Return(nil)
 
@@ -151,7 +151,7 @@ func (suite *RestaurantControllerTestSuite) TestCreateFailByBind() {
 	suite.controller = &RestaurantController{}
 	mockBinder.On(
 		"Bind",
-		mock.MatchedBy(func(i interface{}) bool {return true}),
+		mock.MatchedBy(func(i interface{}) bool { return true }),
 		suite.echoContext,
 	).Return(errors.New("bind error"))
 

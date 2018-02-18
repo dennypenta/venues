@@ -1,8 +1,8 @@
 package assembly
 
 import (
-	"gopkg.in/go-playground/validator.v9"
 	"github.com/labstack/echo"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 type Validator struct {
@@ -16,4 +16,3 @@ func (v *Validator) Validate(i interface{}) error {
 func newValidator() echo.Validator {
 	return &Validator{validator: validator.New()}
 }
-

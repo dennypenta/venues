@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"venues/cmd/repositories"
 
-	"github.com/labstack/echo"
 	"venues/cmd/models"
+
+	"github.com/labstack/echo"
 )
 
 type RestaurantController struct {
