@@ -48,6 +48,11 @@ func (m *MockRepo) Update(query *models.Restaurant, object *models.Restaurant) e
 	return args.Error(0)
 }
 
+func (m *MockRepo) Remove(query *models.Restaurant) error {
+	args := m.Called(query)
+	return args.Error(0)
+}
+
 type RestaurantControllerTestSuite struct {
 	suite.Suite
 
@@ -276,6 +281,63 @@ func (suite *RestaurantControllerTestSuite) TestUpdateFailFromRepo() {
 
 	mockRepo.AssertExpectations(suite.T())
 	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestRemoveSuccess() {
+	req := httptest.NewRequest(echo.DELETE, "/", nil)
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Remove",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(nil)
+	suite.controller = &RestaurantController{Repo: mockRepo}
+
+	suite.controller.Remove(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
+}
+
+func (suite *RestaurantControllerTestSuite) TestRemoveFailNotFound() {
+	req := httptest.NewRequest(echo.DELETE, "/", nil)
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Remove",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(mgo.ErrNotFound)
+	suite.controller = &RestaurantController{Repo: mockRepo}
+
+	suite.controller.Remove(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusNotFound)
+}
+
+func (suite *RestaurantControllerTestSuite) TestRemoveFailService() {
+	req := httptest.NewRequest(echo.DELETE, "/", nil)
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Remove",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(errors.New("mocked error"))
+	suite.controller = &RestaurantController{Repo: mockRepo}
+
+	suite.controller.Remove(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
 }
 

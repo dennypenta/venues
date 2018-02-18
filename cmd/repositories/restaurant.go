@@ -17,6 +17,7 @@ type RestaurantAccessor interface {
 	Create(*models.Restaurant) error
 	List() ([]models.Restaurant, error)
 	Update(*models.Restaurant, *models.Restaurant) error
+	Remove(*models.Restaurant) error
 }
 
 type RestaurantRepo struct {
@@ -35,6 +36,10 @@ func (repo *RestaurantRepo) Create(object *models.Restaurant) error {
 
 func (repo *RestaurantRepo) Update(query *models.Restaurant, object *models.Restaurant) error {
 	return repo.storage.Update(query, object)
+}
+
+func (repo *RestaurantRepo) Remove(query *models.Restaurant) error {
+	return repo.storage.Remove(query)
 }
 
 func NewRestaurantRepo() *RestaurantRepo {

@@ -55,6 +55,11 @@ func (m *MockDataAccess) Update(query interface{}, model interface{}) error {
 	return args.Error(0)
 }
 
+func (m *MockDataAccess) Remove(query interface{}) error {
+	args := m.Called(query)
+	return args.Error(0)
+}
+
 type RestaurantRepoTestSuite struct {
 	suite.Suite
 
@@ -163,6 +168,34 @@ func (suite *RestaurantRepoTestSuite) TestUpdateError() {
 	mockAccess.On("Update", object, update).Return(errors.New("mocked error"))
 
 	err := suite.repo.Update(object, update)
+
+	mockAccess.AssertExpectations(suite.T())
+	suite.Assertions.Error(err)
+}
+
+func (suite *RestaurantRepoTestSuite) TestRemoveSuccess() {
+	data, _ := suite.repo.List()
+	suite.Assertions.Zero(data)
+
+	object := &models.Restaurant{Name: "Name"}
+	err := suite.repo.Create(object)
+	suite.Assertions.Nil(err)
+
+	err = suite.repo.Remove(object)
+	suite.Assertions.Nil(err)
+
+	data, _ = suite.repo.List()
+	suite.Assertions.Zero(data)
+}
+
+func (suite *RestaurantRepoTestSuite) TestRemoveError() {
+	mockAccess := &MockDataAccess{}
+	suite.repo = &RestaurantRepo{storage: mockAccess}
+
+	object := &models.Restaurant{Name: "Name"}
+	mockAccess.On("Remove", object).Return(errors.New("mocked error"))
+
+	err := suite.repo.Remove(object)
 
 	mockAccess.AssertExpectations(suite.T())
 	suite.Assertions.Error(err)

@@ -55,8 +55,21 @@ func (controller *RestaurantController) Update(context echo.Context) error {
 	}
 
 	return context.NoContent(http.StatusOK)
-
 }
+
+func (controller *RestaurantController) Remove(context echo.Context) error {
+	query := &models.Restaurant{ID: bson.ObjectId(context.Param("restaurant_id"))}
+	if err := controller.Repo.Remove(query); err != nil {
+		if err == mgo.ErrNotFound {
+			return context.NoContent(http.StatusNotFound)
+		}
+
+		return context.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return context.NoContent(http.StatusOK)
+}
+
 func NewRestaurantController() *RestaurantController {
 	return &RestaurantController{Repo: repositories.NewRestaurantRepo()}
 }
