@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"fmt"
 )
 
 type RestaurantController struct {
@@ -22,6 +23,7 @@ func (controller *RestaurantController) List(context echo.Context) error {
 	if err := context.Bind(query); err != nil {
 		return context.String(http.StatusBadRequest, err.Error())
 	}
+
 	restaurants, err := controller.Repo.List(query)
 	if err != nil {
 		return context.NoContent(http.StatusServiceUnavailable)
