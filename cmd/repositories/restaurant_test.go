@@ -4,10 +4,13 @@ import (
 	"errors"
 	"testing"
 
-	"venues/cmd/assembly"
 	"venues/cmd/fixtures"
 	"venues/cmd/models"
 	"venues/cmd/settings"
+
+	"venues/pkg/mongo"
+
+	"venues/cmd/storages"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -32,9 +35,9 @@ type MockErrorDataAccess struct {
 	mock.Mock
 }
 
-func (m *MockErrorDataAccess) Find(query interface{}) Querier {
+func (m *MockErrorDataAccess) Find(query interface{}) mongo.Querier {
 	args := m.Called(query)
-	return args.Get(0).(Querier)
+	return args.Get(0).(mongo.Querier)
 }
 
 type RestaurantRepoTestSuite struct {
@@ -47,9 +50,9 @@ type RestaurantRepoTestSuite struct {
 func (suite *RestaurantRepoTestSuite) SetupTest() {
 	settings.Load()
 
-	suite.storage = assembly.InitTestStorage().C(models.RestaurantCollectionName)
+	suite.storage = storages.GetTestStorage().C(models.RestaurantCollectionName)
 	suite.repo = &RestaurantRepo{
-		storage: &DataAccess{suite.storage},
+		storage: &mongo.DataAccess{suite.storage},
 	}
 }
 
