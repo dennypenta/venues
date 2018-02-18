@@ -1,4 +1,4 @@
-package assembly
+package storage
 
 import (
 	"venues/cmd/settings"
@@ -25,10 +25,10 @@ func initStorage(db string) *mgo.Database {
 	return storage
 }
 
-func InitStorage() *mgo.Database {
+func GetStorage() *mgo.Database {
 	return initStorage(settings.MustGetSetting("MONGO_DB_NAME"))
 }
 
-func InitTestStorage() *mgo.Database {
+func GetTestStorage() *mgo.Database {
 	return initStorage(settings.MustGetSetting("MONGO_DB_NAME_TEST"))
 }

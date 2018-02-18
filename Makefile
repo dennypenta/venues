@@ -1,4 +1,4 @@
-.PHONY: list test push
+.PHONY: list test
 
 
 lint:
@@ -6,3 +6,6 @@ lint:
 	goimports -w cmd
 	go fix cmd
 	go vet
+
+test:
+	go test ./...
