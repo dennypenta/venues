@@ -2,7 +2,10 @@ package assembly
 
 import (
 	"fmt"
-	"net/http"
+
+	"venues/cmd/routes"
+	"venues/cmd/storages"
+	"venues/pkg/healthcheckers"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -18,9 +21,15 @@ func (app *App) setMiddleware() {
 }
 
 func (app *App) setRoutes() {
-	app.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!\n")
-	})
+	mongoHealthChecker := &healthcheckers.CheckService{
+		ServiceName: "Mongo",
+		Action:      storages.GetStorage().Session.Ping,
+	}
+	healthCkecker := HealthCheck{[]healthcheckers.Checker{mongoHealthChecker}}
+	app.GET("/", healthCkecker.Check)
+
+	restaurantGroup := app.Group("/restaurants")
+	routes.BuildRestaurantGroup(restaurantGroup)
 }
 
 func (app *App) init() {
