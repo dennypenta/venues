@@ -16,9 +16,9 @@ type Querier interface {
 }
 
 type DataAccess struct {
-	collection *mgo.Collection
+	Collection *mgo.Collection
 }
 
 func (da *DataAccess) Find(query interface{}) Querier {
-	return da.collection.Find(query)
+	return da.Collection.Find(query)
 }
