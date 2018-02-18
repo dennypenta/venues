@@ -45,6 +45,10 @@ func (app *App) Run(port string) {
 
 func NewApp() *App {
 	app := &App{echo.New()}
+
+	// setup validator that will be used by echo.Context.Bind
+	app.Validator = newValidator()
+
 	app.init()
 
 	return app
