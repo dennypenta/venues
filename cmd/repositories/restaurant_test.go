@@ -117,7 +117,7 @@ func (suite *RestaurantRepoTestSuite) TestCreateSuccess() {
 	data, _ := suite.repo.List()
 	suite.Assertions.Zero(data)
 
-	expected := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	expected := &models.Restaurant{Name: "Name"}
 	err := suite.repo.Create(expected)
 	suite.Assertions.Nil(err)
 
@@ -131,7 +131,7 @@ func (suite *RestaurantRepoTestSuite) TestCreateError() {
 	mockAccess := &MockDataAccess{}
 	suite.repo = &RestaurantRepo{storage: mockAccess}
 
-	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	object := &models.Restaurant{Name: "Name"}
 	mockAccess.On("Insert", object).Return(errors.New("mocked error"))
 
 	err := suite.repo.Create(object)
@@ -141,10 +141,10 @@ func (suite *RestaurantRepoTestSuite) TestCreateError() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestUpdateSuccess() {
-	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	object := &models.Restaurant{Name: "Name"}
 	suite.repo.Create(object)
 
-	update := &models.Restaurant{Name: "Name333", Menu: []models.Dish{}}
+	update := &models.Restaurant{Name: "Name333"}
 	err := suite.repo.Update(object, update)
 	suite.Assertions.Nil(err)
 
@@ -158,8 +158,8 @@ func (suite *RestaurantRepoTestSuite) TestUpdateError() {
 	mockAccess := &MockDataAccess{}
 	suite.repo = &RestaurantRepo{storage: mockAccess}
 
-	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
-	update := &models.Restaurant{Name: "Name333", Menu: []models.Dish{}}
+	object := &models.Restaurant{Name: "Name"}
+	update := &models.Restaurant{Name: "Name333"}
 	mockAccess.On("Update", object, update).Return(errors.New("mocked error"))
 
 	err := suite.repo.Update(object, update)
