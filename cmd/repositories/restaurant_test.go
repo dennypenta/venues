@@ -55,7 +55,6 @@ func (m *MockDataAccess) Update(query interface{}, model interface{}) error {
 	return args.Error(0)
 }
 
-
 type RestaurantRepoTestSuite struct {
 	suite.Suite
 

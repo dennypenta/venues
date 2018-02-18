@@ -7,8 +7,8 @@ import (
 	"venues/cmd/models"
 
 	"github.com/labstack/echo"
-	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type RestaurantController struct {

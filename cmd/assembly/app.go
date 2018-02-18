@@ -3,10 +3,10 @@ package assembly
 import (
 	"fmt"
 
-	"venues/pkg/validator"
 	"venues/cmd/routes"
 	"venues/cmd/storages"
 	"venues/pkg/healthcheckers"
+	"venues/pkg/validator"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
