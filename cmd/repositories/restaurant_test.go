@@ -123,6 +123,7 @@ func (suite *RestaurantRepoTestSuite) TestCreateSuccess() {
 
 	result := &models.Restaurant{}
 	suite.repo.storage.Find(expected).One(result)
+	expected.ID = result.ID
 	suite.Assertions.Equal(result, expected)
 }
 
@@ -148,8 +149,8 @@ func (suite *RestaurantRepoTestSuite) TestUpdateSuccess() {
 	suite.Assertions.Nil(err)
 
 	result := &models.Restaurant{}
-	update.ID = object.ID
 	suite.repo.storage.Find(update).One(result)
+	update.ID = result.ID
 	suite.Assertions.Equal(result, update)
 }
 
