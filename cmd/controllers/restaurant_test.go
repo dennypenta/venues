@@ -15,7 +15,18 @@ import (
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"strings"
 )
+
+type MockBinder struct {
+	mock.Mock
+}
+
+func (m *MockBinder) Bind(i interface{}, c echo.Context) error {
+	args := m.Called(i, c)
+	return args.Error(0)
+}
+
 
 type MockRepo struct {
 	mock.Mock
@@ -24,6 +35,11 @@ type MockRepo struct {
 func (m *MockRepo) List() ([]models.Restaurant, error) {
 	args := m.Called()
 	return args.Get(0).([]models.Restaurant), args.Error(1)
+}
+
+func (m *MockRepo) Create(object *models.Restaurant) error {
+	args := m.Called(object)
+	return args.Error(0)
 }
 
 type RestaurantControllerTestSuite struct {
@@ -38,10 +54,9 @@ func (suite *RestaurantControllerTestSuite) SetupTest() {
 	req := httptest.NewRequest(echo.GET, "/", nil)
 	suite.recorder = httptest.NewRecorder()
 	suite.echoContext = echo.New().NewContext(req, suite.recorder)
-
 }
 
-func (suite *RestaurantControllerTestSuite) TestSuccess() {
+func (suite *RestaurantControllerTestSuite) TestListSuccess() {
 	var emptyData []models.Restaurant
 	for _, returnValue := range [][]models.Restaurant{
 		fixtures.SimpleRestaurantSet(),
@@ -61,7 +76,7 @@ func (suite *RestaurantControllerTestSuite) TestSuccess() {
 	}
 }
 
-func (suite *RestaurantControllerTestSuite) TestFail() {
+func (suite *RestaurantControllerTestSuite) TestListFail() {
 	var returnValue []models.Restaurant
 
 	mockRepo := &MockRepo{}
@@ -71,6 +86,82 @@ func (suite *RestaurantControllerTestSuite) TestFail() {
 	suite.controller.List(suite.echoContext)
 
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestCreateSuccess() {
+	body := "body"
+	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+
+	mockRepo := &MockRepo{}
+	mockBinder := &MockBinder{}
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockRepo.On(
+	"Create",
+		mock.MatchedBy(func(obj *models.Restaurant) bool {return true}),
+	).Return(nil)
+	mockBinder.On(
+	"Bind",
+		mock.MatchedBy(func(i interface{}) bool {return true}),
+		suite.echoContext,
+	).Return(nil)
+
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Create(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+	mockRepo.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
+}
+
+func (suite *RestaurantControllerTestSuite) TestCreateFailByRepo() {
+	body := "body"
+	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+
+	mockRepo := &MockRepo{}
+	mockBinder := &MockBinder{}
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockRepo.On(
+		"Create",
+		mock.MatchedBy(func(obj *models.Restaurant) bool {return true}),
+	).Return(errors.New("create error"))
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool {return true}),
+		suite.echoContext,
+	).Return(nil)
+
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Create(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+	mockRepo.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestCreateFailByBind() {
+	body := "body"
+	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+
+	mockBinder := &MockBinder{}
+	suite.controller = &RestaurantController{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool {return true}),
+		suite.echoContext,
+	).Return(errors.New("bind error"))
+
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Create(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusBadRequest)
 }
 
 func TestRestaurantControllerTestSuite(t *testing.T) {
