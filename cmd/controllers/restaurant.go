@@ -5,6 +5,7 @@ import (
 	"venues/cmd/repositories"
 
 	"github.com/labstack/echo"
+	"venues/cmd/models"
 )
 
 type RestaurantController struct {
@@ -20,6 +21,19 @@ func (controller *RestaurantController) List(context echo.Context) error {
 	}
 
 	return context.JSON(http.StatusOK, restaurants)
+}
+
+func (controller *RestaurantController) Create(context echo.Context) error {
+	restaurant := &models.Restaurant{}
+	if err := context.Bind(restaurant); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+
+	if err := controller.Repo.Create(restaurant); err != nil {
+		return context.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return context.NoContent(http.StatusOK)
 }
 
 func NewRestaurantController() *RestaurantController {
