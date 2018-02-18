@@ -4,17 +4,19 @@ import (
 	"github.com/labstack/echo"
 	"gopkg.in/go-playground/validator.v9"
 )
-func customFunc(fl FieldLevel) bool {
 
-	if fl.Field().String() == "invalid" {
+// function for synchronize models.Restaurant.City
+// we don't have to have cities like "Moscow" and "Mascow"
+func ValidateCity(fl validator.FieldLevel) bool {
+	// fake implementation
+	// actually we have to have a separate service as Redis
+	// that has a data set of cities
+	if fl.Field().String() == "Mascow" {
 		return false
 	}
 
 	return true
 }
-
-validate.RegisterValidation("custom tag name", customFunc)
-
 
 type Validator struct {
 	validator *validator.Validate
@@ -25,5 +27,7 @@ func (v *Validator) Validate(i interface{}) error {
 }
 
 func NewValidator() echo.Validator {
-	return &Validator{validator: validator.New()}
+	validatorType := validator.New()
+	validatorType.RegisterValidation("city", ValidateCity)
+	return &Validator{validator: validatorType}
 }

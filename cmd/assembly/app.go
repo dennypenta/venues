@@ -3,6 +3,7 @@ package assembly
 import (
 	"fmt"
 
+	"venues/pkg/validator"
 	"venues/cmd/routes"
 	"venues/cmd/storages"
 	"venues/pkg/healthcheckers"
@@ -47,7 +48,7 @@ func NewApp() *App {
 	app := &App{echo.New()}
 
 	// setup validator that will be used by echo.Context.Bind
-	app.Validator = newValidator()
+	app.Validator = validator.NewValidator()
 
 	app.init()
 
