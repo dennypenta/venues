@@ -9,4 +9,6 @@ import (
 func BuildRestaurantGroup(group *echo.Group) {
 	controller := controllers.NewRestaurantController()
 	group.GET("/restaurants", controller.List)
+	group.POST("/restaurants", controller.Create)
+	group.POST("/restaurants/:restaurant_id", controller.Update)
 }
