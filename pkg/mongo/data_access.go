@@ -10,6 +10,7 @@ var (
 type DataAccessor interface {
 	Find(interface{}) Querier
 	Insert(interface{}) error
+	Update(interface{}, interface{}) error
 }
 
 type Querier interface {
@@ -27,4 +28,8 @@ func (da *DataAccess) Find(query interface{}) Querier {
 
 func (da *DataAccess) Insert(object interface{}) error {
 	return da.Collection.Insert(object)
+}
+
+func (da *DataAccess) Update(query interface{}, object interface{}) error {
+	return da.Collection.Update(query, object)
 }

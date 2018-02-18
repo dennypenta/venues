@@ -7,6 +7,8 @@ import (
 	"venues/cmd/models"
 
 	"github.com/labstack/echo"
+	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/mgo.v2"
 )
 
 type RestaurantController struct {
@@ -37,6 +39,24 @@ func (controller *RestaurantController) Create(context echo.Context) error {
 	return context.NoContent(http.StatusOK)
 }
 
+func (controller *RestaurantController) Update(context echo.Context) error {
+	query := &models.Restaurant{ID: bson.ObjectId(context.Param("restaurant_id"))}
+	update := &models.Restaurant{}
+	if err := context.Bind(update); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+
+	if err := controller.Repo.Update(query, update); err != nil {
+		if err == mgo.ErrNotFound {
+			return context.NoContent(http.StatusNotFound)
+		}
+
+		return context.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return context.NoContent(http.StatusOK)
+
+}
 func NewRestaurantController() *RestaurantController {
 	return &RestaurantController{Repo: repositories.NewRestaurantRepo()}
 }

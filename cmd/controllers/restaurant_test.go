@@ -17,6 +17,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/mgo.v2"
 )
 
 type MockBinder struct {
@@ -39,6 +40,11 @@ func (m *MockRepo) List() ([]models.Restaurant, error) {
 
 func (m *MockRepo) Create(object *models.Restaurant) error {
 	args := m.Called(object)
+	return args.Error(0)
+}
+
+func (m *MockRepo) Update(query *models.Restaurant, object *models.Restaurant) error {
+	args := m.Called(query, object)
 	return args.Error(0)
 }
 
@@ -90,7 +96,7 @@ func (suite *RestaurantControllerTestSuite) TestListFail() {
 
 func (suite *RestaurantControllerTestSuite) TestCreateSuccess() {
 	body := "body"
-	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(body))
 	suite.echoContext = echo.New().NewContext(req, suite.recorder)
 
 	mockRepo := &MockRepo{}
@@ -115,9 +121,9 @@ func (suite *RestaurantControllerTestSuite) TestCreateSuccess() {
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
 }
 
-func (suite *RestaurantControllerTestSuite) TestCreateFailByRepo() {
+func (suite *RestaurantControllerTestSuite) TestCreateFailFromRepo() {
 	body := "body"
-	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(body))
 	suite.echoContext = echo.New().NewContext(req, suite.recorder)
 
 	mockRepo := &MockRepo{}
@@ -142,9 +148,9 @@ func (suite *RestaurantControllerTestSuite) TestCreateFailByRepo() {
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
 }
 
-func (suite *RestaurantControllerTestSuite) TestCreateFailByBind() {
+func (suite *RestaurantControllerTestSuite) TestCreateFailFromBind() {
 	body := "body"
-	req := httptest.NewRequest(echo.GET, "/", strings.NewReader(body))
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(body))
 	suite.echoContext = echo.New().NewContext(req, suite.recorder)
 
 	mockBinder := &MockBinder{}
@@ -162,6 +168,115 @@ func (suite *RestaurantControllerTestSuite) TestCreateFailByBind() {
 	mockBinder.AssertExpectations(suite.T())
 
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusBadRequest)
+}
+
+func (suite *RestaurantControllerTestSuite) TestUpdateSuccess() {
+	body := "body"
+	req := httptest.NewRequest(echo.PATCH, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Update",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(nil)
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Update(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
+}
+
+func (suite *RestaurantControllerTestSuite) TestUpdateFailNotFound() {
+	body := "body"
+	req := httptest.NewRequest(echo.PATCH, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Update",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(mgo.ErrNotFound)
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Update(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusNotFound)
+}
+
+func (suite *RestaurantControllerTestSuite) TestUpdateFailFromBind() {
+	body := "body"
+	req := httptest.NewRequest(echo.PATCH, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	suite.controller = &RestaurantController{}
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(errors.New("bind error"))
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Update(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusBadRequest)
+}
+
+func (suite *RestaurantControllerTestSuite) TestUpdateFailFromRepo() {
+	body := "body"
+	req := httptest.NewRequest(echo.PATCH, "/", strings.NewReader(body))
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+	suite.echoContext.SetParamNames("restaurant_id")
+	suite.echoContext.SetParamValues("123")
+
+	mockRepo := &MockRepo{}
+	mockRepo.On(
+		"Update",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+	).Return(errors.New("repo error"))
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.Update(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
 }
 
 func TestRestaurantControllerTestSuite(t *testing.T) {

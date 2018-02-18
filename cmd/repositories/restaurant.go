@@ -16,6 +16,7 @@ var (
 type RestaurantAccessor interface {
 	Create(*models.Restaurant) error
 	List() ([]models.Restaurant, error)
+	Update(*models.Restaurant, *models.Restaurant) error
 }
 
 type RestaurantRepo struct {
@@ -29,8 +30,11 @@ func (repo *RestaurantRepo) List() ([]models.Restaurant, error) {
 }
 
 func (repo *RestaurantRepo) Create(object *models.Restaurant) error {
-	object.ID = bson.NewObjectId()
 	return repo.storage.Insert(object)
+}
+
+func (repo *RestaurantRepo) Update(query *models.Restaurant, object *models.Restaurant) error {
+	return repo.storage.Update(query, object)
 }
 
 func NewRestaurantRepo() *RestaurantRepo {

@@ -50,6 +50,12 @@ func (m *MockDataAccess) Insert(model interface{}) error {
 	return args.Error(0)
 }
 
+func (m *MockDataAccess) Update(query interface{}, model interface{}) error {
+	args := m.Called(query, model)
+	return args.Error(0)
+}
+
+
 type RestaurantRepoTestSuite struct {
 	suite.Suite
 
@@ -130,6 +136,35 @@ func (suite *RestaurantRepoTestSuite) TestCreateError() {
 
 	err := suite.repo.Create(object)
 
+	mockAccess.AssertExpectations(suite.T())
+	suite.Assertions.Error(err)
+}
+
+func (suite *RestaurantRepoTestSuite) TestUpdateSuccess() {
+	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	suite.repo.Create(object)
+
+	update := &models.Restaurant{Name: "Name333", Menu: []models.Dish{}}
+	err := suite.repo.Update(object, update)
+	suite.Assertions.Nil(err)
+
+	result := &models.Restaurant{}
+	update.ID = object.ID
+	suite.repo.storage.Find(update).One(result)
+	suite.Assertions.Equal(result, update)
+}
+
+func (suite *RestaurantRepoTestSuite) TestUpdateError() {
+	mockAccess := &MockDataAccess{}
+	suite.repo = &RestaurantRepo{storage: mockAccess}
+
+	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	update := &models.Restaurant{Name: "Name333", Menu: []models.Dish{}}
+	mockAccess.On("Update", object, update).Return(errors.New("mocked error"))
+
+	err := suite.repo.Update(object, update)
+
+	mockAccess.AssertExpectations(suite.T())
 	suite.Assertions.Error(err)
 }
 
