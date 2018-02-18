@@ -122,11 +122,11 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 
 	mockedStorage.On(
 		"Find",
-		mock.MatchedBy(func(i interface{}) bool {return true}),
+		mock.MatchedBy(func(i interface{}) bool { return true }),
 	).Return(mockedQuerier)
 	mockedQuerier.On(
 		"All",
-		mock.MatchedBy(func(i interface{}) bool {return true}),
+		mock.MatchedBy(func(i interface{}) bool { return true }),
 	).Return(errors.New("Mocked error"))
 
 	_, err := suite.repo.List(&models.Restaurant{})

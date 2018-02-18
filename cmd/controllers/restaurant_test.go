@@ -77,7 +77,7 @@ func (suite *RestaurantControllerTestSuite) TestListSuccess() {
 		suite.controller = &RestaurantController{Repo: mockRepo}
 		mockRepo.On(
 			"List",
-			mock.MatchedBy(func(i *models.Restaurant) bool {return true}),
+			mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
 		).Return(returnValue, nil)
 		mockBinder := &MockBinder{}
 		mockBinder.On(
@@ -107,7 +107,7 @@ func (suite *RestaurantControllerTestSuite) TestListFailService() {
 	suite.controller = &RestaurantController{Repo: mockRepo}
 	mockRepo.On(
 		"List",
-		mock.MatchedBy(func(i *models.Restaurant) bool {return true}),
+		mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
 	).Return(returnValue, errors.New("mocked error"))
 	mockBinder := &MockBinder{}
 	mockBinder.On(
