@@ -9,10 +9,12 @@ var (
 
 type DataAccessor interface {
 	Find(interface{}) Querier
+	Insert(interface{}) error
 }
 
 type Querier interface {
 	All(interface{}) error
+	One(interface{}) error
 }
 
 type DataAccess struct {
@@ -21,4 +23,8 @@ type DataAccess struct {
 
 func (da *DataAccess) Find(query interface{}) Querier {
 	return da.Collection.Find(query)
+}
+
+func (da *DataAccess) Insert(object interface{}) error {
+	return da.Collection.Insert(object)
 }

@@ -18,26 +18,36 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type MockErrorQuerier struct {
+type MockQuerier struct {
 	mock.Mock
 }
 
-func (m *MockErrorQuerier) All(model interface{}) error {
+func (m *MockQuerier) All(model interface{}) error {
 	args := m.Called(model)
 	return args.Error(0)
 }
 
-func (m *MockErrorQuerier) matchedBy(value interface{}) bool {
+func (m *MockQuerier) One(model interface{}) error {
+	args := m.Called(model)
+	return args.Error(0)
+}
+
+func (m *MockQuerier) matchedBy(value interface{}) bool {
 	return true
 }
 
-type MockErrorDataAccess struct {
+type MockDataAccess struct {
 	mock.Mock
 }
 
-func (m *MockErrorDataAccess) Find(query interface{}) mongo.Querier {
+func (m *MockDataAccess) Find(query interface{}) mongo.Querier {
 	args := m.Called(query)
 	return args.Get(0).(mongo.Querier)
+}
+
+func (m *MockDataAccess) Insert(model interface{}) error {
+	args := m.Called(model)
+	return args.Error(0)
 }
 
 type RestaurantRepoTestSuite struct {
@@ -52,7 +62,7 @@ func (suite *RestaurantRepoTestSuite) SetupTest() {
 
 	suite.storage = storages.GetTestStorage().C(models.RestaurantCollectionName)
 	suite.repo = &RestaurantRepo{
-		storage: &mongo.DataAccess{suite.storage},
+		storage: &mongo.DataAccess{Collection: suite.storage},
 	}
 }
 
@@ -84,8 +94,8 @@ func (suite *RestaurantRepoTestSuite) TestEmptyList() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestErrorList() {
-	mockedStorage := &MockErrorDataAccess{}
-	mockedQuerier := &MockErrorQuerier{}
+	mockedStorage := &MockDataAccess{}
+	mockedQuerier := &MockQuerier{}
 	suite.repo = &RestaurantRepo{storage: mockedStorage}
 
 	mockedStorage.On("Find", bson.M{}).Return(mockedQuerier)
@@ -95,6 +105,31 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 
 	mockedStorage.AssertExpectations(suite.T())
 	mockedQuerier.AssertExpectations(suite.T())
+	suite.Assertions.Error(err)
+}
+
+func (suite *RestaurantRepoTestSuite) TestCreateSuccess() {
+	data, _ := suite.repo.List()
+	suite.Assertions.Zero(data)
+
+	expected := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	err := suite.repo.Create(expected)
+	suite.Assertions.Nil(err)
+
+	result := &models.Restaurant{}
+	suite.repo.storage.Find(expected).One(result)
+	suite.Assertions.Equal(result, expected)
+}
+
+func (suite *RestaurantRepoTestSuite) TestCreateError() {
+	mockAccess := &MockDataAccess{}
+	suite.repo = &RestaurantRepo{storage: mockAccess}
+
+	object := &models.Restaurant{Name: "Name", Menu: []models.Dish{}}
+	mockAccess.On("Insert", object).Return(errors.New("mocked error"))
+
+	err := suite.repo.Create(object)
+
 	suite.Assertions.Error(err)
 }
 
