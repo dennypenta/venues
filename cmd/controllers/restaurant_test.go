@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/mgo.v2"
+	"fmt"
 )
 
 type MockBinder struct {
@@ -33,8 +34,8 @@ type MockRepo struct {
 	mock.Mock
 }
 
-func (m *MockRepo) List(filter *models.Restaurant, ordering string) ([]models.Restaurant, error) {
-	args := m.Called(filter, ordering)
+func (m *MockRepo) List(filter *models.Restaurant, ordering string, page int) ([]models.Restaurant, error) {
+	args := m.Called(filter, ordering, page)
 	return args.Get(0).([]models.Restaurant), args.Error(1)
 }
 
@@ -79,6 +80,7 @@ func (suite *RestaurantControllerTestSuite) TestListSuccess() {
 			"List",
 			mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
 			"",
+			0,
 		).Return(returnValue, nil)
 		mockBinder := &MockBinder{}
 		mockBinder.On(
@@ -110,6 +112,7 @@ func (suite *RestaurantControllerTestSuite) TestListFailService() {
 		"List",
 		mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
 		"",
+		0,
 	).Return(returnValue, errors.New("mocked error"))
 	mockBinder := &MockBinder{}
 	mockBinder.On(
@@ -125,6 +128,58 @@ func (suite *RestaurantControllerTestSuite) TestListFailService() {
 	mockRepo.AssertExpectations(suite.T())
 	mockBinder.AssertExpectations(suite.T())
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestListPaginateSuccess() {
+	var returnValue []models.Restaurant
+	page := 2
+
+	mockRepo := &MockRepo{}
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockRepo.On(
+		"List",
+		mock.MatchedBy(func(i *models.Restaurant) bool { return true }),
+		"",
+		page,
+	).Return(returnValue, nil)
+
+	req := httptest.NewRequest(echo.GET, fmt.Sprintf("/restaurants?page=%d", page), nil)
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+
+	mockBinder := &MockBinder{}
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+	suite.echoContext.Echo().Binder = mockBinder
+
+	suite.controller.List(suite.echoContext)
+
+	mockRepo.AssertExpectations(suite.T())
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusOK)
+}
+
+func (suite *RestaurantControllerTestSuite) TestListPaginateFail() {
+	suite.controller = &RestaurantController{}
+
+	req := httptest.NewRequest(echo.GET, "/?page=errPage", nil)
+	suite.echoContext = echo.New().NewContext(req, suite.recorder)
+
+	fmt.Println("PAGE: ", suite.echoContext.QueryParam("page"))
+	mockBinder := &MockBinder{}
+	suite.echoContext.Echo().Binder = mockBinder
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		suite.echoContext,
+	).Return(nil)
+
+	suite.controller.List(suite.echoContext)
+
+	mockBinder.AssertExpectations(suite.T())
+	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusBadRequest)
 }
 
 func (suite *RestaurantControllerTestSuite) TestListFailBind() {

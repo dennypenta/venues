@@ -36,6 +36,16 @@ func (m *MockQuerier) Sort(ordering string) mongo.Querier {
 	return args.Get(0).(mongo.Querier)
 }
 
+func (m *MockQuerier) Skip(n int) mongo.Querier {
+	args := m.Called(n)
+	return args.Get(0).(mongo.Querier)
+}
+
+func (m *MockQuerier) Limit(n int) mongo.Querier {
+	args := m.Called(n)
+	return args.Get(0).(mongo.Querier)
+}
+
 type MockDataAccess struct {
 	mock.Mock
 }
@@ -88,7 +98,7 @@ func (suite *RestaurantRepoTestSuite) TestSuccessList() {
 		}
 	}
 
-	result, err := suite.repo.List(&models.Restaurant{}, "")
+	result, err := suite.repo.List(&models.Restaurant{}, "", 0)
 
 	suite.Assertions.Nil(err)
 	suite.Assertions.Equal(result, expected)
@@ -103,7 +113,7 @@ func (suite *RestaurantRepoTestSuite) TestFilterList() {
 	}
 
 	filter := &models.Restaurant{City: "City1"}
-	result, err := suite.repo.List(filter, "")
+	result, err := suite.repo.List(filter, "", 0)
 
 	suite.Assertions.Nil(err)
 	for _, i := range result {
@@ -120,16 +130,31 @@ func (suite *RestaurantRepoTestSuite) TestOrderingList() {
 	}
 
 	ordering := "-rating"
-	result, err := suite.repo.List(&models.Restaurant{}, ordering)
+	result, err := suite.repo.List(&models.Restaurant{}, ordering, 0)
 
 	suite.Assertions.Nil(err)
 	suite.Assertions.True(result[0].Rating > result[1].Rating)
 }
 
+func (suite *RestaurantRepoTestSuite) TestPaginateList() {
+	expected := fixtures.SimpleRestaurantSet()
+	for _, i := range expected {
+		if err := suite.storage.Insert(i); err != nil {
+			suite.T().Fatal(err.Error())
+		}
+	}
+
+	result, err := suite.repo.List(&models.Restaurant{}, "", 2)
+
+	suite.Assertions.Nil(err)
+	suite.Assertions.True(len(result) == 0)
+}
+
+
 func (suite *RestaurantRepoTestSuite) TestEmptyList() {
 	var expected []models.Restaurant
 
-	result, err := suite.repo.List(&models.Restaurant{}, "")
+	result, err := suite.repo.List(&models.Restaurant{}, "", 0)
 
 	suite.Assertions.Nil(err)
 	suite.Assertions.Equal(result, expected)
@@ -149,7 +174,7 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 		mock.MatchedBy(func(i interface{}) bool { return true }),
 	).Return(errors.New("Mocked error"))
 
-	_, err := suite.repo.List(&models.Restaurant{}, "")
+	_, err := suite.repo.List(&models.Restaurant{}, "", 0)
 
 	mockedStorage.AssertExpectations(suite.T())
 	mockedQuerier.AssertExpectations(suite.T())
@@ -157,7 +182,7 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestCreateSuccess() {
-	data, _ := suite.repo.List(&models.Restaurant{}, "")
+	data, _ := suite.repo.List(&models.Restaurant{}, "", 0)
 	suite.Assertions.Zero(data)
 
 	expected := &models.Restaurant{Name: "Name"}
@@ -212,7 +237,7 @@ func (suite *RestaurantRepoTestSuite) TestUpdateError() {
 }
 
 func (suite *RestaurantRepoTestSuite) TestRemoveSuccess() {
-	data, _ := suite.repo.List(&models.Restaurant{}, "")
+	data, _ := suite.repo.List(&models.Restaurant{}, "", 0)
 	suite.Assertions.Zero(data)
 
 	object := &models.Restaurant{Name: "Name"}
@@ -222,7 +247,7 @@ func (suite *RestaurantRepoTestSuite) TestRemoveSuccess() {
 	err = suite.repo.Remove(object)
 	suite.Assertions.Nil(err)
 
-	data, _ = suite.repo.List(&models.Restaurant{}, "")
+	data, _ = suite.repo.List(&models.Restaurant{}, "", 0)
 	suite.Assertions.Zero(data)
 }
 

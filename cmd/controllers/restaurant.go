@@ -9,10 +9,7 @@ import (
 	"github.com/labstack/echo"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-)
-
-const (
-	queryOrderParam = "ordering"
+	"strconv"
 )
 
 type RestaurantController struct {
@@ -22,12 +19,22 @@ type RestaurantController struct {
 // I'm not checking for empty list cause We actually don't wanna see 204,
 // Easier will get empty list and 200
 func (controller *RestaurantController) List(context echo.Context) error {
+	var err error
+
 	filter := &models.Restaurant{}
-	if err := context.Bind(filter); err != nil {
+	if err = context.Bind(filter); err != nil {
 		return context.String(http.StatusBadRequest, err.Error())
 	}
 
-	restaurants, err := controller.Repo.List(filter, context.QueryParam(queryOrderParam))
+	var page uint64
+	if queryPage := context.QueryParam(queryPageParam); queryPage != "" {
+		page, err = strconv.ParseUint(queryPage, 10, 32)
+		if err != nil {
+			return context.String(http.StatusBadRequest, errPageParamMsg)
+		}
+	}
+
+	restaurants, err := controller.Repo.List(filter, context.QueryParam(queryOrderParam), int(page))
 	if err != nil {
 		return context.NoContent(http.StatusServiceUnavailable)
 	}

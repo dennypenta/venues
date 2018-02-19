@@ -18,6 +18,8 @@ type Querier interface {
 	All(interface{}) error
 	One(interface{}) error
 	Sort(string) Querier
+	Skip(int) Querier
+	Limit(int) Querier
 }
 
 type DataAccess struct {
@@ -53,5 +55,16 @@ func(q *Query) One(result interface{}) error {
 }
 
 func(q *Query) Sort(ordering string) Querier {
-	return &Query{q.query.Sort(ordering)}
+	q.query = q.query.Sort(ordering)
+	return q
+}
+
+func(q *Query) Skip(n int) Querier {
+	q.query = q.query.Skip(n)
+	return q
+}
+
+func(q *Query) Limit(n int) Querier {
+	q.query = q.query.Limit(n)
+	return q
 }
