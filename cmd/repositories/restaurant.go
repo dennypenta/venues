@@ -19,6 +19,7 @@ type RestaurantAccessor interface {
 	Update(*models.Restaurant, *models.Restaurant) error
 	Remove(*models.Restaurant) error
 	AddDish(*models.Restaurant, *models.Dish) error
+	ListDish(*models.Restaurant, *models.Menu) error
 }
 
 type RestaurantRepo struct {
@@ -57,6 +58,10 @@ func (repo *RestaurantRepo) Remove(query *models.Restaurant) error {
 func (repo *RestaurantRepo) AddDish(query *models.Restaurant, object *models.Dish) error {
 	update := bson.M{"$push": bson.M{"menu": object}}
 	return repo.storage.Update(query, update)
+}
+
+func (repo *RestaurantRepo) ListDish(query *models.Restaurant, objects *models.Menu) error {
+	return repo.storage.Find(query).Select(bson.M{"menu": 1, "_id": 0}).One(objects)
 }
 
 func NewRestaurantRepo() *RestaurantRepo {

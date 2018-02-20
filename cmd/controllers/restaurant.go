@@ -88,13 +88,7 @@ func (controller *RestaurantController) Remove(context echo.Context) error {
 }
 
 func (controller *RestaurantController) AddDish(context echo.Context) error {
-	defer func() error {
-		if r := recover(); r != nil {
-			return context.String(http.StatusBadRequest, errObjectIdParamMsg)
-		}
-
-		return context.NoContent(http.StatusServiceUnavailable)
-	}()
+	defer controller.ObjectIDErrorHandler(context)
 
 	query := &models.Restaurant{ID: bson.ObjectIdHex(context.Param("restaurant_id"))}
 	dish := &models.Dish{}
@@ -112,6 +106,28 @@ func (controller *RestaurantController) AddDish(context echo.Context) error {
 	}
 
 	return context.NoContent(http.StatusOK)
+}
+
+func (controller *RestaurantController) ListDish(context echo.Context) error {
+	defer controller.ObjectIDErrorHandler(context)
+
+	query := &models.Restaurant{ID: bson.ObjectIdHex(context.Param("restaurant_id"))}
+	menu := &models.Menu{}
+	if err := controller.Repo.ListDish(query, menu); err != nil {
+		return context.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return context.JSON(http.StatusOK, menu)
+}
+
+
+func (controller *RestaurantController) ObjectIDErrorHandler(context echo.Context) error {
+	if r := recover(); r != nil {
+		context.Logger().Error(r)
+		return context.String(http.StatusBadRequest, errObjectIdParamMsg)
+	}
+
+	return context.NoContent(http.StatusServiceUnavailable)
 }
 
 func NewRestaurantController() *RestaurantController {

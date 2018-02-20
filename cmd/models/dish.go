@@ -3,7 +3,7 @@ package models
 import "gopkg.in/mgo.v2/bson"
 
 type Menu struct {
-	Dishes []Dish `bson: "dishes,omitempty" json:"dishes,omitempty"`
+	Menu []Dish `bson:"menu,omitempty" json:"menu,omitempty"`
 }
 
 // Price has integer type cause it makes better round control

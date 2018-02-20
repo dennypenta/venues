@@ -13,4 +13,5 @@ func BuildRestaurantGroup(group *echo.Group) {
 	group.POST("/:restaurant_id", controller.Update)
 	group.DELETE("/:restaurant_id", controller.Remove)
 	group.POST("/:restaurant_id/dish", controller.AddDish)
+	group.GET("/:restaurant_id/dish", controller.ListDish)
 }
