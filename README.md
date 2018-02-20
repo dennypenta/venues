@@ -34,7 +34,7 @@
 
 - Create new restaurant:
 
-    `curl -X POST -H "Content-Type: application/json" -d '{"name": "Dish1"}' 'localhost:8000/restaurants/5a8ad983591b381c73797521/dish'`
+    `curl -X POST -H "Content-Type: application/json" -d '{"name": "Top Restaurant", "city": "Moscow City"}' 'localhost:8000/restaurants'`
 
 - Get all restaurants:
 
@@ -45,3 +45,7 @@
     * for filtering by city add `city` query params
 
     * for select page by page add `page` param
+
+- Get menu of chosen restaurant:
+
+    `curl -X GET -H "Content-Type: application/json" 'localhost:8000/restaurants/<RESTAURANT-ID>/dish'`
