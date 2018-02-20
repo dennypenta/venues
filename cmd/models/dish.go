@@ -10,8 +10,8 @@ type Menu struct {
 // Price will represent as price multiplied by 100
 type Dish struct {
 	ID    bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	Name  string        `bson:"name,omitempty" json:"name,omitempty"`
-	Price int           `bson:"price,omitempty" json:"price,omitempty"`
+	Name  string        `bson:"name,omitempty" json:"name,omitempty" validate:"required"`
+	Price int           `bson:"price,omitempty" json:"price,omitempty" validate:"required,min=100"`
 }
 
 //db.Restaurants.find({'dishes.name': 'name'}, {dishes: 1, _id: 0})

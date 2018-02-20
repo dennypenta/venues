@@ -8,6 +8,11 @@ import (
 	"venues/pkg/healthcheckers"
 	"venues/pkg/validator"
 
+	"context"
+	"os"
+	"os/signal"
+	"time"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
@@ -41,7 +46,21 @@ func (app *App) init() {
 
 func (app *App) Run(port string) {
 	startPort := fmt.Sprintf(":%s", port)
-	app.Logger.Fatal(app.Start(startPort))
+	go app.Logger.Fatal(app.Start(startPort))
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// do not forget about bubble ordering of defers
+	// close sessions before
+	defer cancel()
+	defer storages.GetStorage().Session.Close()
+	if err := app.Shutdown(ctx); err != nil {
+		app.Logger.Fatal(err)
+	}
+
 }
 
 func NewApp() *App {

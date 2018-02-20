@@ -48,7 +48,7 @@ func (repo *RestaurantRepo) Create(object *models.Restaurant) error {
 }
 
 func (repo *RestaurantRepo) Update(query *models.Restaurant, object *models.Restaurant) error {
-	return repo.storage.Update(query, object)
+	return repo.storage.Update(query, bson.M{"$set": object})
 }
 
 func (repo *RestaurantRepo) Remove(query *models.Restaurant) error {

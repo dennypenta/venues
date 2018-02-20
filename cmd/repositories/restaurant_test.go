@@ -221,14 +221,13 @@ func (suite *RestaurantRepoTestSuite) TestUpdateSuccess() {
 	object := &models.Restaurant{Name: "Name"}
 	suite.repo.Create(object)
 
-	update := &models.Restaurant{Name: "Name333"}
+	update := &models.Restaurant{City: "City33"}
 	err := suite.repo.Update(object, update)
 	suite.Assertions.Nil(err)
 
 	result := &models.Restaurant{}
 	suite.repo.storage.Find(update).One(result)
-	update.ID = result.ID
-	suite.Assertions.Equal(result, update)
+	suite.Assertions.Equal(result, &models.Restaurant{ID: result.ID, Name: object.Name, City: update.City})
 }
 
 func (suite *RestaurantRepoTestSuite) TestUpdateError() {
@@ -237,7 +236,7 @@ func (suite *RestaurantRepoTestSuite) TestUpdateError() {
 
 	object := &models.Restaurant{Name: "Name"}
 	update := &models.Restaurant{Name: "Name333"}
-	mockAccess.On("Update", object, update).Return(errors.New("mocked error"))
+	mockAccess.On("Update", object, bson.M{"$set": update}).Return(errors.New("mocked error"))
 
 	err := suite.repo.Update(object, update)
 

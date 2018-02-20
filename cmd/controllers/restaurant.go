@@ -49,6 +49,10 @@ func (controller *RestaurantController) Create(context echo.Context) error {
 		return context.String(http.StatusBadRequest, err.Error())
 	}
 
+	if err := context.Validate(restaurant); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+
 	if err := controller.Repo.Create(restaurant); err != nil {
 		return context.NoContent(http.StatusServiceUnavailable)
 	}
@@ -96,6 +100,10 @@ func (controller *RestaurantController) AddDish(context echo.Context) error {
 		return context.String(http.StatusBadRequest, err.Error())
 	}
 
+	if err := context.Validate(dish); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+
 	if err := controller.Repo.AddDish(query, dish); err != nil {
 		if err == mgo.ErrNotFound {
 			return context.NoContent(http.StatusNotFound)
@@ -119,7 +127,6 @@ func (controller *RestaurantController) ListDish(context echo.Context) error {
 
 	return context.JSON(http.StatusOK, menu)
 }
-
 
 func (controller *RestaurantController) ObjectIDErrorHandler(context echo.Context) error {
 	if r := recover(); r != nil {
