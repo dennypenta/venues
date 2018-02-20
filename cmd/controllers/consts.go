@@ -4,7 +4,8 @@ import "fmt"
 
 const (
 	queryOrderParam = "ordering"
-	queryPageParam = "page"
+	queryPageParam  = "page"
 )
 
-var errPageParamMsg = fmt.Sprintf("\"%s\" should be an integer", queryPageParam)
+var errPageParamMsg = fmt.Sprintf("\"%s\" should be a positive integer", queryPageParam)
+var errObjectIdParamMsg = fmt.Sprint("ObjectIDs must be exactly 12 bytes long")

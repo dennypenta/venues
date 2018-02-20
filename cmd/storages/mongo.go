@@ -19,7 +19,7 @@ func initStorage(db string) *mgo.Database {
 			log.Fatal("Error initializing Storage \n %s", err.Error())
 		}
 
-		storage = session.DB(settings.MustGetSetting("MONGO_DB_NAME"))
+		storage = session.DB(db)
 	}
 
 	return storage

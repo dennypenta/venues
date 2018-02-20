@@ -14,11 +14,12 @@ import (
 
 	"strings"
 
+	"fmt"
+
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/mgo.v2"
-	"fmt"
 )
 
 type MockBinder struct {
@@ -51,6 +52,11 @@ func (m *MockRepo) Update(query *models.Restaurant, object *models.Restaurant) e
 
 func (m *MockRepo) Remove(query *models.Restaurant) error {
 	args := m.Called(query)
+	return args.Error(0)
+}
+
+func (m *MockRepo) AddDish(query *models.Restaurant, object *models.Dish) error {
+	args := m.Called(query, object)
 	return args.Error(0)
 }
 
@@ -167,7 +173,6 @@ func (suite *RestaurantControllerTestSuite) TestListPaginateFail() {
 	req := httptest.NewRequest(echo.GET, "/?page=errPage", nil)
 	suite.echoContext = echo.New().NewContext(req, suite.recorder)
 
-	fmt.Println("PAGE: ", suite.echoContext.QueryParam("page"))
 	mockBinder := &MockBinder{}
 	suite.echoContext.Echo().Binder = mockBinder
 	mockBinder.On(
@@ -438,6 +443,54 @@ func (suite *RestaurantControllerTestSuite) TestRemoveFailService() {
 
 	mockRepo.AssertExpectations(suite.T())
 	suite.Assertions.Equal(suite.echoContext.Response().Status, http.StatusServiceUnavailable)
+}
+
+func (suite *RestaurantControllerTestSuite) TestAddDishSuccess() {
+	body := "body"
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(body))
+	echoContext := echo.New().NewContext(req, suite.recorder)
+	echoContext.SetParamNames("restaurant_id")
+	echoContext.SetParamValues("5a8ad983591b381c73797521")
+
+	mockRepo := &MockRepo{}
+	mockBinder := &MockBinder{}
+	suite.controller = &RestaurantController{Repo: mockRepo}
+	mockRepo.On(
+		"AddDish",
+		mock.MatchedBy(func(obj *models.Restaurant) bool { return true }),
+		mock.MatchedBy(func(obj *models.Dish) bool { return true }),
+	).Return(nil)
+	mockBinder.On(
+		"Bind",
+		mock.MatchedBy(func(i interface{}) bool { return true }),
+		echoContext,
+	).Return(nil)
+
+	echoContext.Echo().Binder = mockBinder
+
+	if err := suite.controller.AddDish(echoContext); err != nil {
+		suite.Assertions.Fail(err.Error())
+	}
+
+	mockBinder.AssertExpectations(suite.T())
+	mockRepo.AssertExpectations(suite.T())
+	suite.Assertions.Equal(echoContext.Response().Status, http.StatusOK)
+}
+
+func (suite *RestaurantControllerTestSuite) TestAddDishFailFromObjectIdHex() {
+	body := "body"
+	req := httptest.NewRequest(echo.POST, "/", strings.NewReader(body))
+	echoContext := echo.New().NewContext(req, suite.recorder)
+	echoContext.SetParamNames("restaurant_id")
+	echoContext.SetParamValues("bad-object-id")
+
+	suite.controller = &RestaurantController{}
+
+	if err := suite.controller.AddDish(echoContext); err != nil {
+		suite.Assertions.Fail(err.Error())
+	}
+
+	suite.Assertions.Equal(echoContext.Response().Status, http.StatusBadRequest)
 }
 
 func TestRestaurantControllerTestSuite(t *testing.T) {

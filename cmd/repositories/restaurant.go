@@ -5,6 +5,8 @@ import (
 	"venues/pkg/mongo"
 
 	"venues/cmd/storages"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 var (
@@ -16,6 +18,7 @@ type RestaurantAccessor interface {
 	List(*models.Restaurant, string, int) ([]models.Restaurant, error)
 	Update(*models.Restaurant, *models.Restaurant) error
 	Remove(*models.Restaurant) error
+	AddDish(*models.Restaurant, *models.Dish) error
 }
 
 type RestaurantRepo struct {
@@ -25,7 +28,7 @@ type RestaurantRepo struct {
 func (repo *RestaurantRepo) List(filter *models.Restaurant, ordering string, page int) ([]models.Restaurant, error) {
 	var restaurants []models.Restaurant
 
-	query := repo.storage.Find(filter)
+	query := repo.storage.Find(filter).Select(bson.M{"menu": 0})
 	if ordering != "" {
 		query = query.Sort(ordering)
 	}
@@ -49,6 +52,11 @@ func (repo *RestaurantRepo) Update(query *models.Restaurant, object *models.Rest
 
 func (repo *RestaurantRepo) Remove(query *models.Restaurant) error {
 	return repo.storage.Remove(query)
+}
+
+func (repo *RestaurantRepo) AddDish(query *models.Restaurant, object *models.Dish) error {
+	update := bson.M{"$push": bson.M{"menu": object}}
+	return repo.storage.Update(query, update)
 }
 
 func NewRestaurantRepo() *RestaurantRepo {

@@ -15,10 +15,16 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type MockQuerier struct {
 	mock.Mock
+}
+
+func (m *MockQuerier) Select(fields interface{}) mongo.Querier {
+	args := m.Called(fields)
+	return args.Get(0).(mongo.Querier)
 }
 
 func (m *MockQuerier) All(model interface{}) error {
@@ -150,7 +156,6 @@ func (suite *RestaurantRepoTestSuite) TestPaginateList() {
 	suite.Assertions.True(len(result) == 0)
 }
 
-
 func (suite *RestaurantRepoTestSuite) TestEmptyList() {
 	var expected []models.Restaurant
 
@@ -170,9 +175,13 @@ func (suite *RestaurantRepoTestSuite) TestErrorList() {
 		mock.MatchedBy(func(i interface{}) bool { return true }),
 	).Return(mockedQuerier)
 	mockedQuerier.On(
+		"Select",
+		bson.M{"menu": 0},
+	).Return(mockedQuerier)
+	mockedQuerier.On(
 		"All",
 		mock.MatchedBy(func(i interface{}) bool { return true }),
-	).Return(errors.New("Mocked error"))
+	).Return(errors.New("mocked error"))
 
 	_, err := suite.repo.List(&models.Restaurant{}, "", 0)
 
@@ -262,6 +271,20 @@ func (suite *RestaurantRepoTestSuite) TestRemoveError() {
 
 	mockAccess.AssertExpectations(suite.T())
 	suite.Assertions.Error(err)
+}
+
+func (suite *RestaurantRepoTestSuite) TestPushDishSuccess() {
+	object := &models.Restaurant{Name: "Name"}
+	suite.repo.Create(object)
+
+	dish := &models.Dish{Name: "Name"}
+	err := suite.repo.AddDish(object, dish)
+	suite.Assertions.Nil(err)
+
+	result := &models.Restaurant{}
+	suite.repo.storage.Find(object).One(result)
+
+	suite.Assertions.Equal(&result.Menu[0], dish)
 }
 
 func TestRestaurantRepoTestSuite(t *testing.T) {

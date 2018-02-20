@@ -6,10 +6,11 @@ import (
 
 	"venues/cmd/models"
 
+	"strconv"
+
 	"github.com/labstack/echo"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"strconv"
 )
 
 type RestaurantController struct {
@@ -80,6 +81,33 @@ func (controller *RestaurantController) Remove(context echo.Context) error {
 			return context.NoContent(http.StatusNotFound)
 		}
 
+		return context.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return context.NoContent(http.StatusOK)
+}
+
+func (controller *RestaurantController) AddDish(context echo.Context) error {
+	defer func() error {
+		if r := recover(); r != nil {
+			return context.String(http.StatusBadRequest, errObjectIdParamMsg)
+		}
+
+		return context.NoContent(http.StatusServiceUnavailable)
+	}()
+
+	query := &models.Restaurant{ID: bson.ObjectIdHex(context.Param("restaurant_id"))}
+	dish := &models.Dish{}
+	if err := context.Bind(dish); err != nil {
+		return context.String(http.StatusBadRequest, err.Error())
+	}
+
+	if err := controller.Repo.AddDish(query, dish); err != nil {
+		if err == mgo.ErrNotFound {
+			return context.NoContent(http.StatusNotFound)
+		}
+
+		context.Logger().Error(err.Error())
 		return context.NoContent(http.StatusServiceUnavailable)
 	}
 

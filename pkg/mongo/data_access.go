@@ -15,6 +15,7 @@ type DataAccessor interface {
 }
 
 type Querier interface {
+	Select(interface{}) Querier
 	All(interface{}) error
 	One(interface{}) error
 	Sort(string) Querier
@@ -44,6 +45,11 @@ func (da *DataAccess) Remove(query interface{}) error {
 
 type Query struct {
 	query *mgo.Query
+}
+
+func(q *Query) Select(fields interface{}) Querier {
+	q.query = q.query.Select(fields)
+	return q
 }
 
 func(q *Query) All(result interface{}) error {
